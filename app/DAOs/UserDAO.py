@@ -6,7 +6,30 @@ database = DataBase()
 
 def getUser(hash):
 
-    values = database.Select(f"""SELECT * FROM doc.tb_user WHERE "AuthHash" = '{hash}'""")
+    values = database.Select(f"""
+                             SELECT 
+                                tbu."IdUser"
+                                ,"Nome"
+                                ,"AuthHash"
+                                ,"Login"
+                                ,"NomeFuncao" 
+                                ,COALESCE("Imagem",'../../../assets/imagemLogin.jpg') as "Imagem"
+                                ,COALESCE(STRING_AGG(tbdu."IdDocumentacao"::character varying,','),'0') as "IdDocumentacoes"
+                            FROM DOC.TB_USER tbu
+                            LEFT JOIN DOC.TB_FUNCAO tbf
+                            ON tbu."IdFuncao" = tbf."IdFuncao"
+                            LEFT JOIN DOC.TB_IMAGEM_USER tbiu
+                            ON tbiu."IdUser" = tbu."IdUser"
+                            LEFT JOIN DOC.tb_documentation_user tbdu
+                            ON tbdu."IdUser" = tbu."IdUser"
+                            WHERE "AuthHash" = '{hash}'
+                            GROUP BY tbu."IdUser"
+                                ,"Nome"
+                                ,"AuthHash"
+                                ,"Login"
+                                ,"NomeFuncao" 
+                                ,COALESCE("Imagem",'../../../assets/imagemLogin.jpg')                           
+                             """)
 
     if len(values) <= 0:
         return None
@@ -18,8 +41,10 @@ def getUser(hash):
     user.id = value['IdUser']
     user.login = value['Login']
     user.nome = value['Nome']
-    user.funcao = value['IdFuncao']
+    user.funcao = value['NomeFuncao']
+    user.imagem = value['Imagem']
     user.hash = value['AuthHash']
+    user.projetos = value['IdDocumentacoes'].split(',')
 
     return vars(user)
 
@@ -65,5 +90,20 @@ def deleteUser(user:User):
     """.format(user.login))
 
     errorMessage = 'Deletado com Sucesso',200
+
+    return errorMessage
+
+########################################
+
+
+def changeUserImage(user:User):
+    error = database.Execute("""
+        INSERT INTO doc.tb_imagem_user ("IdUser", "Imagem")
+        VALUES ({}, '{}')
+        ON CONFLICT ("IdUser") DO UPDATE
+        SET "Imagem" = EXCLUDED."Imagem";
+    """.format(user.id, user.imagem))
+
+    errorMessage = 'Registrado com Sucesso',200
 
     return errorMessage

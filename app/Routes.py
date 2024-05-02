@@ -55,11 +55,18 @@ def userLogin():
 
         
         if value is not None:
+            imagem = str(value['imagem'])
+            del value['imagem']
+
             user = json.dumps(value)
             token = 'Bearer '+LoginService.createValidateHash(hash)
 
-            res = make_response({"user":json.loads(user), "token":token},200)
+            resposta = {"user":json.loads(user), "token":token, "imagem":imagem}
+
+            res = make_response(resposta,200)
             res.set_cookie('user', value=user)
+            res.set_cookie('imagemPerfil', value=imagem)
+            
             res.headers['Authorization'] = token
             
             return res
@@ -67,6 +74,28 @@ def userLogin():
             return {'status':'Usuario ou senha não existem'},500
         
 
+    return {}
+
+
+
+@application.route('/user/image', methods=['POST'])
+def userImageChange():
+    response = {}
+    if request.is_json:
+        values = request.get_json()
+
+        user = User(values['login'],'')
+        user.id = values['id']
+        user.nome = values['nome']
+        user.funcao = values['funcao']
+        user.imagem = values['imagem']
+
+        retorno  = UserDAO.changeUserImage(user)
+        
+        response['status'] = retorno[0]
+        code = retorno[1]
+        
+        return make_response(response,code)
     return {}
 
 @application.route('/user/create', methods=['POST'])
@@ -154,6 +183,7 @@ def getAllUserDocumentation(valid):
     objUser.hash = user['hash']
     objUser.nome = user['nome']
     objUser.funcao = user['funcao']
+    objUser.projetos = user['projetos']
 
 
     documentation = DocumentationDAO.getDocumentationAllUser(objUser)

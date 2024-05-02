@@ -7,7 +7,8 @@ class User:
 
     nome:str
     funcao:str
-
+    imagem:str
+    
     projetos:list
 
     login:str

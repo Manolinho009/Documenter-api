@@ -8,7 +8,7 @@ database = DataBase()
 
 def getDocumentationAllUser(user:User):
 
-    values = database.Select(f"""SELECT * FROM doc.tb_documentation WHERE "UsuarioAlteracao" = {user.id} """)
+    values = database.Select(f"""SELECT * FROM doc.tb_documentation WHERE ("UsuarioAlteracao" = {user.id} or "IdDocumentacao" in ({",".join(user.projetos)})) """)
 
     if values and len(values) <= 0:
         return None
