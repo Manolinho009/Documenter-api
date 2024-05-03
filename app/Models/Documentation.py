@@ -1,4 +1,4 @@
-
+from app.Models.User import User
 
 class Documentation:
 
@@ -10,8 +10,9 @@ class Documentation:
     versao:str = None
     status:int = None
     dataAlteracao:str = None
-    usuarioAlteracao:int = None
+    usuarioAlteracao:User = None
     tags:list = None
+    id:int 
 
     def __init__(self, titulo) :
         

@@ -8,13 +8,56 @@ database = DataBase()
 
 def getDocumentationAllUser(user:User):
 
-    values = database.Select(f"""SELECT * FROM doc.tb_documentation WHERE ("UsuarioAlteracao" = {user.id} or "IdDocumentacao" in ({",".join(user.projetos)})) """)
+    if ':' in user.projetos:
+        user.projetos.remove(':')
+        if len(user.projetos)<=0:
+            user.projetos.append('0:0')
+
+    values = database.Select(f"""
+                             
+                            SELECT 
+                                doc."Titulo"
+                                , doc."Descricao"
+                                , doc."Abas"
+                                , doc."ImagemCapa"
+                                , doc."CommitText"
+                                , doc."Versao"
+                                , doc."Status"
+                                , doc."DataAlteracao"::character varying
+                                , doc."UsuarioAlteracao"
+                                , tbu."Nome" as "NomeUsuarioAlteracao"
+                                , doc."IdDocumentacao"
+                                ,STRING_AGG(CONCAT(tags."NomeTag",':',tags."CorTag",':',tags."IdTag")::character varying,';') as "Tags"
+                            FROM doc.tb_documentation doc
+                            LEFT JOIN  DOC.TB_TAG tags
+                            ON tags."IdTag"::character varying = any(doc."Tags")
+                            LEFT JOIN  DOC.TB_USER tbu
+                            ON tbu."IdUser" = doc."UsuarioAlteracao"
+                             
+                            WHERE (doc."UsuarioAlteracao" = {user.id} or doc."IdDocumentacao" in ({",".join([ i.split(':')[0] for i in user.projetos])}))
+
+                            GROUP BY doc."Titulo"
+                                , doc."Descricao"
+                                , doc."ImagemCapa"
+                                , doc."CommitText"
+                                , doc."Versao"
+                                , doc."Status"
+                                , doc."DataAlteracao"
+                                , doc."UsuarioAlteracao"
+                                , tbu."Nome"
+                                , doc."IdDocumentacao"
+                            
+                              """)
 
     if values and len(values) <= 0:
         return None
     
     result = []
     for value in values:
+        userAlteracao = User('','')
+        userAlteracao.id = value['UsuarioAlteracao']
+        userAlteracao.nome = value['NomeUsuarioAlteracao']
+        
         documentation:Documentation = Documentation(value['Titulo'])
         documentation.descricao = value['Descricao']
         documentation.abas = value['Abas']
@@ -23,8 +66,9 @@ def getDocumentationAllUser(user:User):
         documentation.versao = value['Versao']
         documentation.status = value['Status']
         documentation.dataAlteracao = value['DataAlteracao']
-        documentation.usuarioAlteracao = value['UsuarioAlteracao']
+        documentation.usuarioAlteracao = vars(userAlteracao)
         documentation.tags = value['Tags']
+        documentation.id = value['IdDocumentacao']
 
         result.append(vars(documentation))
    
@@ -144,3 +188,24 @@ def deleteDocumentation(documentation:Documentation):
         errorMessage = 'Documentação Já existe com esse titulo',500
 
     return errorMessage
+
+
+
+
+
+
+
+
+def selectTags():
+    values = database.Select("""
+        SELECT * FROM DOC.TB_TAG
+    """)
+
+    if values and len(values) <= 0:
+        return None
+    
+    result = []
+    for value in values:
+        result.append(value)
+
+    return result

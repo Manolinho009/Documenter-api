@@ -14,7 +14,7 @@ def getUser(hash):
                                 ,"Login"
                                 ,"NomeFuncao" 
                                 ,COALESCE("Imagem",'../../../assets/imagemLogin.jpg') as "Imagem"
-                                ,COALESCE(STRING_AGG(tbdu."IdDocumentacao"::character varying,','),'0') as "IdDocumentacoes"
+	                            ,COALESCE(STRING_AGG(CONCAT(tbdu."IdDocumentacao"::character varying,':',tbdu."IdAcesso"),','),'0') as "IdDocumentacoes"
                             FROM DOC.TB_USER tbu
                             LEFT JOIN DOC.TB_FUNCAO tbf
                             ON tbu."IdFuncao" = tbf."IdFuncao"
@@ -58,7 +58,7 @@ def postUser(user:User):
     """.format(user.nome, user.funcao, user.hash, user.login))
 
     errorMessage = 'Criado com Sucesso',200
-
+    print(error)
     if not error[0] and str(error[1]) == "UniqueViolation":
         errorMessage = 'Usuario Já Existe',500
 

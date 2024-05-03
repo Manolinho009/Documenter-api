@@ -167,6 +167,14 @@ def userDelete(a):
 
 ############################################################################
 
+@application.route('/documentation/tags/all', methods=['GET'])
+def getTagsPadrao():
+
+    result = DocumentationDAO.selectTags()
+
+    if result is None:
+        return make_response([])
+    return make_response(result)
 
 
 @application.route('/documentation/user/all', methods=['POST'])
@@ -287,26 +295,27 @@ def updateDocumentation(valid):
 
 
 
-@application.route('/documentation/delete', methods=['DELETE'])
-@authorize
-def deleteDocumentation(valid):
+@application.route('/documentation/delete/<titulo>', methods=['DELETE'])
+# @authorize
+def deleteDocumentation(titulo):
+    print(titulo)
     a = request.cookies.get(key='user')
+
     response = {}
  
-    if request.is_json:
-        values = request.get_json()
+    documentation = Documentation(titulo=titulo)
 
-        documentation = Documentation(titulo=values['titulo'])
+    doc = DocumentationDAO.deleteDocumentation(documentation)
+    response['status'] = doc[0]
+    code = doc[1]
 
-        doc = DocumentationDAO.deleteDocumentation(documentation)
-        response['status'] = doc[0]
-        code = doc[1]
     if doc is None:
         
         response['status'] = 'Não Existe'
         code = 500
-    
+
     return make_response(response,code)
+
 
 
 
