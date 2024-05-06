@@ -1,10 +1,11 @@
 import json
 
 from app import application
-from app.DAOs import UserDAO,DocumentationDAO
+from app.DAOs import UserDAO,DocumentationDAO,TagDAO
 from app.Services import LoginService
 from app.Models.User import User
 from app.Models.Documentation import Documentation
+from app.Models.Tag import Tag
 
 from functools import wraps
 
@@ -164,6 +165,32 @@ def userDelete(a):
     
     return {}
 
+############################################################################
+
+
+@application.route('/tag/create', methods=['POST'])
+# @authorize
+def createTag():
+    response = {}
+    code = 200
+    if request.is_json:
+        values = request.get_json()
+        print(values)
+        tag = Tag(
+            values['textoTag'],
+            values['corTag']
+        )
+
+        retorno = TagDAO.postTag(tag)
+
+        response['status'] = retorno[0]
+        code = retorno[1]
+
+        if retorno is None:
+            response['status'] = 'Não Existe'
+            code = 500
+            
+    return make_response(response, code)
 
 ############################################################################
 
@@ -270,7 +297,7 @@ def updateDocumentation(valid):
 
     if request.is_json:
         values = request.get_json()
-
+        
         documentation = Documentation(titulo=values['titulo'])
 
         documentation.descricao = values['descricao']
