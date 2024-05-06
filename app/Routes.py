@@ -289,6 +289,89 @@ def createDocumentation(valid):
     
     return make_response(response,code)
 
+
+
+@application.route('/documentation/user/add', methods=['POST'])
+@authorize
+def addUserDocumentation(valid):
+    a = request.cookies.get(key='user')
+    # {
+    #     "tags":[]
+    #     ,"titulo":"123"
+    #     ,"sections":[]
+    #     ,"commitText":""
+    #     ,"sectionsChanges":[]
+    #     ,"version":""
+    #     ,"status":""
+    #     ,"dh_alteracao":""
+    #     ,"user_alteracao":{"login":"thithi","nome":"Thiago Rocha"}
+    #     ,"descricao":"123"
+    # }
+    response = {}
+    if request.is_json:
+        values = request.get_json()
+
+        print(values)
+
+        documentation = Documentation(titulo=values['documentation']['titulo'])
+        documentation.id = values['documentation']['id']
+
+        doc = DocumentationDAO.postUserDocumentation(documentation,values['idUser'])
+        
+        response["status"] = doc[0]
+        code = doc[1]
+
+    if doc is None:
+        response["status"] = 'Não Existe'
+        code = 500
+    
+    return make_response(response,code)
+
+
+
+@application.route('/documentation/users', methods=['POST'])
+@authorize
+def usersDocumentation(valid):
+    a = request.cookies.get(key='user')
+    # {
+    #     "tags":[]
+    #     ,"titulo":"123"
+    #     ,"sections":[]
+    #     ,"commitText":""
+    #     ,"sectionsChanges":[]
+    #     ,"version":""
+    #     ,"status":""
+    #     ,"dh_alteracao":""
+    #     ,"user_alteracao":{"login":"thithi","nome":"Thiago Rocha"}
+    #     ,"descricao":"123"
+    # }
+    response = {}
+    if request.is_json:
+        values = request.get_json()
+
+        documentation = Documentation(titulo=values['titulo'])
+
+        print(values)
+        documentation.descricao = values['descricao']
+        documentation.abas = values['sections']
+        documentation.imagemCapa = values['imagemCapa']
+        documentation.commitText = values['commitText']
+        documentation.versao = values['version']
+        documentation.status = values['status']
+        documentation.dataAlteracao = values['dh_alteracao']
+        documentation.usuarioAlteracao = values['user_alteracao']
+        documentation.id = values['id']
+        documentation.tags = values['tags']
+
+        doc = DocumentationDAO.getUsersDocumentation(documentation)
+        code = 200 #doc[1]
+
+    if doc is None:
+        response['status'] = 'Não Existe'
+        code = 500
+    
+    return make_response(doc,code)
+
 @application.route('/documentation/update', methods=['PUT'])
 @authorize
 def updateDocumentation(valid):

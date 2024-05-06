@@ -35,6 +35,7 @@ def getDocumentationAllUser(user:User):
                             ON tbu."IdUser" = doc."UsuarioAlteracao"
                              
                             WHERE (doc."UsuarioAlteracao" = {user.id} or doc."IdDocumentacao" in ({",".join([ i.split(':')[0] for i in user.projetos])}))
+                                AND doc."Status" = 1
 
                             GROUP BY doc."Titulo"
                                 , doc."Descricao"
@@ -75,6 +76,43 @@ def getDocumentationAllUser(user:User):
     return result
 
 
+def getUsersDocumentation(documentation:Documentation):
+
+    
+    values = database.Select(f"""
+                                SELECT tbu."IdUser"
+                                        ,"Nome"
+                                        ,"AuthHash"
+                                        ,"Login"
+                                        ,TBF."NomeFuncao" 
+                                FROM DOC.TB_USER TBU
+                                LEFT JOIN DOC.TB_DOCUMENTATION_USER TBDU
+                                ON TBDU."IdUser" = TBU."IdUser"
+                                LEFT JOIN DOC.TB_FUNCAO TBF
+                                ON TBF."IdFuncao" = TBU."IdFuncao"
+                                WHERE (TBDU."IdDocumentacao" = {documentation.id} or TBU."IdUser" = {documentation.usuarioAlteracao['id']}) """)
+
+    if len(values) <= 0:
+        return None
+    
+    result = []
+    for value in values:
+        user = User(
+                login='',
+                password=''
+            )
+        user.nome = value['Nome']
+        user.id = value['IdUser']
+        user.funcao = value['NomeFuncao']
+
+        result.append(
+           vars(user)
+        )
+        
+
+    return result
+
+
 def getDocumentation(IdDocumentation):
 
     
@@ -84,7 +122,8 @@ def getDocumentation(IdDocumentation):
         return None
     
     value = values[0]
-        
+    
+    
     documentation:Documentation = Documentation(value['Titulo'])
     documentation.descricao = value['Descricao']
     documentation.abas = value['Abas']
@@ -95,6 +134,7 @@ def getDocumentation(IdDocumentation):
     documentation.dataAlteracao = value['DataAlteracao']
     documentation.usuarioAlteracao = value['UsuarioAlteracao']
     documentation.tags = value['Tags']
+    documentation.id = value['id']
    
     return vars(documentation)
 
@@ -128,9 +168,25 @@ def postDocumentation(documentation:Documentation):
     return errorMessage
 
 
-    
+def postUserDocumentation(documentation:Documentation,userId):
+    error = database.Execute("""
+        INSERT INTO DOC.TB_DOCUMENTATION_USER
+        VALUES ({},{},1)
+    """.format(documentation.id
+                , userId
+                ))
 
-    pass
+    errorMessage = 'Criado com Sucesso',200
+
+    if error is None:
+        return 'Erro inesperado',500
+
+
+    if not error[0] and str(error[1]) == "UniqueViolation":
+        errorMessage = 'Esse usuario já foi adicionado',500
+
+    return errorMessage
+    
 
 def putDocumentation(documentation:Documentation):
 
@@ -174,9 +230,18 @@ def putDocumentation(documentation:Documentation):
 
 def deleteDocumentation(documentation:Documentation):
     error = database.Execute("""
-        DELETE FROM doc.tb_documentation 
-        WHERE "Titulo" =  '{}'
-    """.format(documentation.titulo))
+        
+        WITH DOC AS (
+        SELECT "IdDocumentacao" FROM doc.tb_documentation
+        WHERE "Titulo" = '{}'	
+        )
+        DELETE FROM doc.tb_documentation_user
+        WHERE "IdDocumentacao" in (SELECT "IdDocumentacao" FROM DOC);
+
+        DELETE FROM doc.tb_documentation
+        WHERE "Titulo" = '{}'                  
+        
+    """.format(documentation.titulo,documentation.titulo))
 
     errorMessage = 'Deletado com Sucesso',200
 
