@@ -79,6 +79,16 @@ def userLogin():
 
 
 
+@application.route('/user/all', methods=['GET'])
+def userAll():
+    retorno  = UserDAO.getAll()
+    print(retorno)
+    if retorno is None:
+        return make_response({'status':'Erro na consulta'},500) 
+
+    return make_response(retorno)
+
+
 @application.route('/user/image', methods=['POST'])
 def userImageChange():
     response = {}
@@ -290,6 +300,42 @@ def createDocumentation(valid):
     return make_response(response,code)
 
 
+
+@application.route('/documentation/user/dell', methods=['POST'])
+@authorize
+def dellUserDocumentation(valid):
+    a = request.cookies.get(key='user')
+    # {
+    #     "tags":[]
+    #     ,"titulo":"123"
+    #     ,"sections":[]
+    #     ,"commitText":""
+    #     ,"sectionsChanges":[]
+    #     ,"version":""
+    #     ,"status":""
+    #     ,"dh_alteracao":""
+    #     ,"user_alteracao":{"login":"thithi","nome":"Thiago Rocha"}
+    #     ,"descricao":"123"
+    # }
+    response = {}
+    if request.is_json:
+        values = request.get_json()
+
+        print(values)
+        
+        documentation = Documentation(titulo=values['documentation']['titulo'])
+        documentation.id = values['documentation']['id']
+
+        doc = DocumentationDAO.deleteUserDocumentation(documentation,values['idUser'])
+        
+        response["status"] = doc[0]
+        code = doc[1]
+
+    if doc is None:
+        response["status"] = 'Não Existe'
+        code = 500
+    
+    return make_response(response,code)
 
 @application.route('/documentation/user/add', methods=['POST'])
 @authorize

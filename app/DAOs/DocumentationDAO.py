@@ -228,6 +228,66 @@ def putDocumentation(documentation:Documentation):
     return errorMessage
 
 
+def deleteUserDocumentation(documentation:Documentation,userId):
+    error = database.Execute("""
+        DELETE FROM DOC.TB_DOCUMENTATION_USER
+        WHERE "IdDocumentacao" = {} and "IdUser" = {}
+    """.format(documentation.id
+                , userId
+                ))
+
+    errorMessage = 'Deletado com Sucesso',200
+
+    if error is None:
+        return 'Erro inesperado',500
+
+
+    if not error[0] and str(error[1]) == "UniqueViolation":
+        errorMessage = 'Esse usuario já foi Apagado',500
+
+    return errorMessage
+    
+
+def putDocumentation(documentation:Documentation):
+
+    error = database.Execute("""
+        UPDATE doc.tb_documentation
+        SET
+            "Descricao" =  '{}'
+            , "Abas" =  '{}'
+            , "ImagemCapa" =  '{}'
+            , "CommitText" =  '{}'
+            , "Versao" =  '{}'
+            , "Status" =  {}
+            , "DataAlteracao" =  '{}'
+            , "UsuarioAlteracao" =  '{}'
+            , "Tags" = array{}::character varying[]
+                             
+        WHERE "Titulo" =  '{}'
+    """.format(documentation.descricao
+                , json.dumps(documentation.abas)
+                , documentation.imagemCapa
+                , documentation.commitText
+                , documentation.versao
+                , documentation.status
+                , documentation.dataAlteracao
+                , documentation.usuarioAlteracao['id']
+                , str(documentation.tags)
+                , documentation.titulo
+                ))
+
+    errorMessage = 'Atualizado com Sucesso',200
+
+    if error is None:
+        return 'Erro inesperado',500
+
+
+    if not error[0] and str(error[1]) == "UniqueViolation":
+        errorMessage = 'Documentação Já existe com esse titulo',500
+
+    return errorMessage
+
+
 def deleteDocumentation(documentation:Documentation):
     error = database.Execute("""
         

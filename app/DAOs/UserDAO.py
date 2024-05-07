@@ -4,6 +4,43 @@ from app.DataBaseModule import DataBase
 
 database = DataBase()
 
+def getAll():
+    values = database.Select(f"""
+                             SELECT 
+                                tbu."IdUser"
+                                ,"Nome"
+                                ,"Login"
+                                ,"NomeFuncao" 
+                                ,COALESCE("Imagem",'../../../assets/imagemLogin.jpg') as "Imagem"
+                            FROM DOC.TB_USER tbu
+                            LEFT JOIN DOC.TB_FUNCAO tbf
+                            ON tbu."IdFuncao" = tbf."IdFuncao"
+                            LEFT JOIN DOC.TB_IMAGEM_USER tbiu
+                            ON tbiu."IdUser" = tbu."IdUser"
+                            
+                            GROUP BY tbu."IdUser"
+                                ,"Nome"
+                                ,"Login"
+                                ,"NomeFuncao" 
+                                ,COALESCE("Imagem",'../../../assets/imagemLogin.jpg')                           
+                             """)
+
+    if len(values) <= 0:
+        return None
+    
+    result = []
+    for value in values:
+        user:User = User('','')
+        user.id = value['IdUser']
+        user.login = value['Login']
+        user.nome = value['Nome']
+        user.funcao = value['NomeFuncao']
+        user.imagem = value['Imagem']
+
+        result.append(vars(user))
+
+    return result
+
 def getUser(hash):
 
     values = database.Select(f"""
