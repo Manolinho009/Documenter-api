@@ -8,13 +8,12 @@ database = DataBase()
 
 def getDocumentationAllUser(user:User):
 
-    if ':' in user.projetos:
-        user.projetos.remove(':')
-        if len(user.projetos)<=0:
-            user.projetos.append('0:0')
+    # if ':' in user.projetos:
+    #     user.projetos.remove(':')
+    #     if len(user.projetos)<=0:
+    #         user.projetos.append('0:0')
 
     values = database.Select(f"""
-                             
                             SELECT 
                                 doc."Titulo"
                                 , doc."Descricao"
@@ -27,14 +26,14 @@ def getDocumentationAllUser(user:User):
                                 , doc."UsuarioAlteracao"
                                 , tbu."Nome" as "NomeUsuarioAlteracao"
                                 , doc."IdDocumentacao"
-                                ,STRING_AGG(CONCAT(tags."NomeTag",':',tags."CorTag",':',tags."IdTag")::character varying,';') as "Tags"
+	                            ,CONCAT('[',STRING_AGG(CONCAT('{'{'}"NomeTag":"',tags."NomeTag",'","CorTag":"',tags."CorTag",'","IdTag":"',tags."IdTag",'"{'}'}')::character varying,','),']') as "Tags"
                             FROM doc.tb_documentation doc
                             LEFT JOIN  DOC.TB_TAG tags
                             ON tags."IdTag"::character varying = any(doc."Tags")
                             LEFT JOIN  DOC.TB_USER tbu
                             ON tbu."IdUser" = doc."UsuarioAlteracao"
                              
-                            WHERE (doc."UsuarioAlteracao" = {user.id} or doc."IdDocumentacao" in ({",".join([ i.split(':')[0] for i in user.projetos])}))
+                            WHERE (doc."IdDocumentacao" in (SELECT "IdDocumentacao" FROM DOC.TB_DOCUMENTATION_USER WHERE "IdUser" =  {user.id}))
                                 AND doc."Status" = 1
 
                             GROUP BY doc."Titulo"
@@ -50,6 +49,7 @@ def getDocumentationAllUser(user:User):
                             
                               """)
 
+    print(user.id)
     if values and len(values) <= 0:
         return None
     
@@ -68,7 +68,9 @@ def getDocumentationAllUser(user:User):
         documentation.status = value['Status']
         documentation.dataAlteracao = value['DataAlteracao']
         documentation.usuarioAlteracao = vars(userAlteracao)
-        documentation.tags = value['Tags']
+
+        documentation.tags = json.loads(value['Tags'])
+
         documentation.id = value['IdDocumentacao']
 
         result.append(vars(documentation))
@@ -152,8 +154,15 @@ def postDocumentation(documentation:Documentation):
                 , documentation.versao
                 , documentation.status
                 , documentation.dataAlteracao
-                , documentation.usuarioAlteracao
+                , documentation.usuarioAlteracao['id']
                 , str(documentation.tags)
+                ))
+    
+    error = database.Execute("""
+        INSERT INTO DOC.TB_DOCUMENTATION_USER
+        VALUES ((SELECT "IdDocumentacao" FROM doc.tb_documentation WHERE "Titulo" = '{}' LIMIT 1),{},1);
+    """.format(documentation.titulo
+                , documentation.usuarioAlteracao['id']
                 ))
 
     errorMessage = 'Criado com Sucesso',200
@@ -171,7 +180,7 @@ def postDocumentation(documentation:Documentation):
 def postUserDocumentation(documentation:Documentation,userId):
     error = database.Execute("""
         INSERT INTO DOC.TB_DOCUMENTATION_USER
-        VALUES ({},{},1)
+        VALUES ({},{},3)
     """.format(documentation.id
                 , userId
                 ))

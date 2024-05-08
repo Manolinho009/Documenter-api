@@ -9,6 +9,11 @@ class User:
     funcao:str
     imagem:str
     
+    acesso:str
+    editar:bool
+    criar:bool
+    apagar:bool
+
     projetos:list
 
     login:str

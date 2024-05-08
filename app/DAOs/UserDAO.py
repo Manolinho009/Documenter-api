@@ -1,6 +1,6 @@
 from app.Models.User import User
 from app.DataBaseModule import DataBase
-
+import json
 
 database = DataBase()
 
@@ -44,14 +44,15 @@ def getAll():
 def getUser(hash):
 
     values = database.Select(f"""
-                             SELECT 
+                            SELECT 
                                 tbu."IdUser"
                                 ,"Nome"
                                 ,"AuthHash"
                                 ,"Login"
                                 ,"NomeFuncao" 
                                 ,COALESCE("Imagem",'../../../assets/imagemLogin.jpg') as "Imagem"
-	                            ,COALESCE(STRING_AGG(CONCAT(tbdu."IdDocumentacao"::character varying,':',tbdu."IdAcesso"),','),'0') as "IdDocumentacoes"
+                            	,CONCAT('{'{'}',COALESCE(STRING_AGG(CONCAT('"',COALESCE(tbdu."IdDocumentacao"::character varying,'0'),'"',':{'{'}"editar":',COALESCE(tba."IcEditar"::int,0),',"criar":',COALESCE(tba."IcCriar"::int,0),',"deletar":',COALESCE(tba."IcDeletar"::int,0),'{'}'}'),','),'0'),'{'}'}') as "IdDocumentacoes"
+        
                             FROM DOC.TB_USER tbu
                             LEFT JOIN DOC.TB_FUNCAO tbf
                             ON tbu."IdFuncao" = tbf."IdFuncao"
@@ -59,13 +60,16 @@ def getUser(hash):
                             ON tbiu."IdUser" = tbu."IdUser"
                             LEFT JOIN DOC.tb_documentation_user tbdu
                             ON tbdu."IdUser" = tbu."IdUser"
+                            LEFT JOIN DOC.tb_acesso tba
+                            ON tba."IdAcesso" = tbdu."IdAcesso"
+
                             WHERE "AuthHash" = '{hash}'
                             GROUP BY tbu."IdUser"
                                 ,"Nome"
                                 ,"AuthHash"
                                 ,"Login"
                                 ,"NomeFuncao" 
-                                ,COALESCE("Imagem",'../../../assets/imagemLogin.jpg')                           
+                                ,COALESCE("Imagem",'../../../assets/imagemLogin.jpg')                            
                              """)
 
     if len(values) <= 0:
@@ -81,8 +85,14 @@ def getUser(hash):
     user.funcao = value['NomeFuncao']
     user.imagem = value['Imagem']
     user.hash = value['AuthHash']
-    user.projetos = value['IdDocumentacoes'].split(',')
-
+    
+    # user.acesso = value['NomeAcesso']
+    # user.editar = value['IcEditar']
+    # user.criar = value['IcCriar']
+    # user.apagar = value['IcDeletar']
+    if(value['IdDocumentacoes']):
+        user.projetos = json.loads(value['IdDocumentacoes'])
+    
     return vars(user)
 
 

@@ -38,7 +38,7 @@ def authorize(f):
 @application.route('/')
 @authorize
 def index(valid):
-    print(valid)
+    # print(valid)
     a = request.cookies.get(key='user')
     hash = LoginService.generateHash('thithi','123')
     value = UserDAO.getUser(hash)
@@ -57,7 +57,7 @@ def userLogin():
         
         if value is not None:
             imagem = str(value['imagem'])
-            del value['imagem']
+            # del value['imagem']
 
             user = json.dumps(value)
             token = 'Bearer '+LoginService.createValidateHash(hash)
@@ -65,8 +65,8 @@ def userLogin():
             resposta = {"user":json.loads(user), "token":token, "imagem":imagem}
 
             res = make_response(resposta,200)
-            res.set_cookie('user', value=user)
-            res.set_cookie('imagemPerfil', value=imagem)
+            # res.set_cookie('user', value=user)
+            # res.set_cookie('imagemPerfil', value=imagem)
             
             res.headers['Authorization'] = token
             
@@ -82,7 +82,7 @@ def userLogin():
 @application.route('/user/all', methods=['GET'])
 def userAll():
     retorno  = UserDAO.getAll()
-    print(retorno)
+    # print(retorno)
     if retorno is None:
         return make_response({'status':'Erro na consulta'},500) 
 
@@ -185,7 +185,7 @@ def createTag():
     code = 200
     if request.is_json:
         values = request.get_json()
-        print(values)
+        # print(values)
         tag = Tag(
             values['textoTag'],
             values['corTag']
@@ -217,9 +217,8 @@ def getTagsPadrao():
 @application.route('/documentation/user/all', methods=['POST'])
 @authorize
 def getAllUserDocumentation(valid):
-    cookie = request.get_json()['user']
-
-    user = json.loads(cookie)
+    value = request.get_json()
+    user = value
     objUser = User(
         login=user['login'],
         password=''
@@ -276,15 +275,15 @@ def createDocumentation(valid):
         values = request.get_json()
 
         documentation = Documentation(titulo=values['titulo'])
-
+        # print(values)
         documentation.descricao = values['descricao']
-        documentation.abas = values['sections']
+        documentation.abas = values['abas']
         documentation.imagemCapa = values['imagemCapa']
         documentation.commitText = values['commitText']
-        documentation.versao = values['version']
+        documentation.versao = values['versao']
         documentation.status = values['status']
-        documentation.dataAlteracao = values['dh_alteracao']
-        documentation.usuarioAlteracao = values['idUser']
+        documentation.dataAlteracao = values['dataAlteracao']
+        documentation.usuarioAlteracao = values['usuarioAlteracao']
         documentation.tags = values['tags']
 
         doc = DocumentationDAO.postDocumentation(documentation)
@@ -321,7 +320,7 @@ def dellUserDocumentation(valid):
     if request.is_json:
         values = request.get_json()
 
-        print(values)
+        # print(values)
         
         documentation = Documentation(titulo=values['documentation']['titulo'])
         documentation.id = values['documentation']['id']
@@ -357,7 +356,7 @@ def addUserDocumentation(valid):
     if request.is_json:
         values = request.get_json()
 
-        print(values)
+        # print(values)
 
         documentation = Documentation(titulo=values['documentation']['titulo'])
         documentation.id = values['documentation']['id']
@@ -397,15 +396,15 @@ def usersDocumentation(valid):
 
         documentation = Documentation(titulo=values['titulo'])
 
-        print(values)
+        # print(values)
         documentation.descricao = values['descricao']
-        documentation.abas = values['sections']
+        documentation.abas = values['abas']
         documentation.imagemCapa = values['imagemCapa']
         documentation.commitText = values['commitText']
-        documentation.versao = values['version']
+        documentation.versao = values['versao']
         documentation.status = values['status']
-        documentation.dataAlteracao = values['dh_alteracao']
-        documentation.usuarioAlteracao = values['user_alteracao']
+        documentation.dataAlteracao = values['dataAlteracao']
+        documentation.usuarioAlteracao = values['usuarioAlteracao']
         documentation.id = values['id']
         documentation.tags = values['tags']
 
@@ -430,13 +429,13 @@ def updateDocumentation(valid):
         documentation = Documentation(titulo=values['titulo'])
 
         documentation.descricao = values['descricao']
-        documentation.abas = values['sections']
+        documentation.abas = values['abas']
         documentation.imagemCapa = values['imagemCapa']
         documentation.commitText = values['commitText']
-        documentation.versao = values['version']
+        documentation.versao = values['versao']
         documentation.status = values['status']
-        documentation.dataAlteracao = values['dh_alteracao']
-        documentation.usuarioAlteracao = values['user_alteracao']
+        documentation.dataAlteracao = values['dataAlteracao']
+        documentation.usuarioAlteracao = values['usuarioAlteracao']
         documentation.tags = values['tags']
 
         doc = DocumentationDAO.putDocumentation(documentation)
@@ -454,7 +453,7 @@ def updateDocumentation(valid):
 @application.route('/documentation/delete/<titulo>', methods=['DELETE'])
 # @authorize
 def deleteDocumentation(titulo):
-    print(titulo)
+    # print(titulo)
     a = request.cookies.get(key='user')
 
     response = {}
