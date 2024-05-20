@@ -115,16 +115,54 @@ def getUsersDocumentation(documentation:Documentation):
     return result
 
 
-def getDocumentation(IdDocumentation):
+def getDocumentation(IdDocumentation,objUser):
 
     
-    values = database.Select(f"""SELECT * FROM doc.tb_documentation WHERE "IdDocumentacao" = {IdDocumentation} """)
+    values = database.Select(f"""
+                            SELECT 
+                                doc."Titulo"
+                                , doc."Descricao"
+                                , doc."Abas"
+                                , doc."ImagemCapa"
+                                , doc."CommitText"
+                                , doc."Versao"
+                                , doc."Status"
+                                , doc."DataAlteracao"::character varying
+                                , doc."UsuarioAlteracao"
+                                , tbu."Nome" as "NomeUsuarioAlteracao"
+                                , doc."IdDocumentacao"
+	                            ,CONCAT('[',STRING_AGG(CONCAT('{'{'}"NomeTag":"',tags."NomeTag",'","CorTag":"',tags."CorTag",'","IdTag":"',tags."IdTag",'"{'}'}')::character varying,','),']') as "Tags"
+                            FROM doc.tb_documentation doc
+                            LEFT JOIN  DOC.TB_TAG tags
+                            ON tags."IdTag"::character varying = any(doc."Tags")
+                            LEFT JOIN  DOC.TB_USER tbu
+                            ON tbu."IdUser" = doc."UsuarioAlteracao"
+                             
+                            WHERE (doc."IdDocumentacao" in (SELECT "IdDocumentacao" FROM DOC.TB_DOCUMENTATION_USER WHERE "IdUser" =  {objUser.id}))
+                                AND doc."Status" = 1
+                                AND doc."IdDocumentacao" = {IdDocumentation}
+
+                            GROUP BY doc."Titulo"
+                                , doc."Descricao"
+                                , doc."ImagemCapa"
+                                , doc."CommitText"
+                                , doc."Versao"
+                                , doc."Status"
+                                , doc."DataAlteracao"
+                                , doc."UsuarioAlteracao"
+                                , tbu."Nome"
+                                , doc."IdDocumentacao"
+                            
+                            """)
 
     if len(values) <= 0:
         return None
     
     value = values[0]
     
+    userAlteracao = User('','')
+    userAlteracao.id = value['UsuarioAlteracao']
+    userAlteracao.nome = value['NomeUsuarioAlteracao']
     
     documentation:Documentation = Documentation(value['Titulo'])
     documentation.descricao = value['Descricao']
@@ -134,9 +172,11 @@ def getDocumentation(IdDocumentation):
     documentation.versao = value['Versao']
     documentation.status = value['Status']
     documentation.dataAlteracao = value['DataAlteracao']
-    documentation.usuarioAlteracao = value['UsuarioAlteracao']
-    documentation.tags = value['Tags']
-    documentation.id = value['id']
+    documentation.usuarioAlteracao = vars(userAlteracao)
+
+    documentation.tags = json.loads(value['Tags'])
+
+    documentation.id = value['IdDocumentacao']
    
     return vars(documentation)
 

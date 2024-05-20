@@ -237,20 +237,44 @@ def getAllUserDocumentation(valid):
     
     return make_response(documentation)
 
+
+
+@application.route('/documentation/get/<docId>', methods=['POST'])
+@authorize
+def getDocumentation(valid,docId):
+    value = request.get_json()
+    user = value
+    objUser = User(
+        login=user['login'],
+        password=''
+    )
+    objUser.id = user['id']
+    objUser.hash = user['hash']
+    objUser.nome = user['nome']
+    objUser.funcao = user['funcao']
+    objUser.projetos = user['projetos']
+
+    documentation = DocumentationDAO.getDocumentation(docId,objUser)
+
+    if documentation is None:
+        return make_response({'status':'Não Existe'},500)
+
+    return make_response(documentation)
+
 #####################################################################
 
 
-@application.route('/documentation/<id>')
-@authorize
-def getDocumentation(valid, id):
-    a = request.cookies.get(key='user')
+# @application.route('/documentation/<id>')
+# @authorize
+# def getDocumentation(valid, id):
+#     a = request.cookies.get(key='user')
 
-    documentation = DocumentationDAO.getDocumentation(id)
+#     documentation = DocumentationDAO.getDocumentation(id)
 
-    if documentation is None:
-        return {'status':'Não Existe'},500
+#     if documentation is None:
+#         return {'status':'Não Existe'},500
     
-    return make_response(documentation)
+#     return make_response(documentation)
 
 
 
